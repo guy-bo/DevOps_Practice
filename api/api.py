@@ -11,10 +11,12 @@ from flask import request
 class PostgresManager:
 
     DEC = ', '
+    DATABASE_URL = 'postgres://rduzihbd:wH5rZa8WqYsA6ILOBFV0DrUp-xiFO9yA@kandula.db.elephantsql.com:5432/rduzihbd'
 
     def __init__(self):
         up.uses_netloc.append("postgres")
-        url = up.urlparse(os.environ["DATABASE_URL"])
+        # url = up.urlparse(os.environ["DATABASE_URL"])
+        url = up.urlparse(PostgresManager.DATABASE_URL)
         self.conn = psycopg2.connect(database=url.path[1:], user=url.username, password=url.password, host=url.hostname, port=url.port)
 
     def __del__(self):
@@ -23,7 +25,7 @@ class PostgresManager:
     def _execute_query(self, qur_str):
         with self.conn.cursor() as curs:
             curs.execute(qur_str)
-            return_tuple = curs.fetchone()
+            return_tuple = curs.fetchall()
         print(return_tuple)
         return return_tuple
 
@@ -45,25 +47,20 @@ class PostgresManager:
         print(json_str)
         return json_str
 
+
 P = PostgresManager()
-P.query('bands', ['*'])
-#
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
 
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Distant Reading Archive</h1><p>This site is a prototype API for distant reading of science fiction novels.</p>"
+    return "<h1>Distant Reading Archive</h1>" \
+           "<p>This site is a prototype API for distant reading of science fiction novels.</p>"
 
 
-@app.route('/get_data', methods=['GET'])
-def get_all_data():
-    return P.query('bands', ['*'])
-
-
-@app.route('/get_data/table', methods=['GET'])
-def get_data_from_table():
+@app.route('/get_all_table', methods=['GET'])
+def get_all_table():
     # Check if an TABLE was provided as part of the URL.
     # If TABLE is provided, assign it to a variable.
     # If no TABLE is provided, display an error in the browser.
@@ -72,7 +69,38 @@ def get_data_from_table():
     else:
         return "Error: No id field provided. Please specify an id."
 
-    return P.query(table, ['*'])
+    return P.query(table)
+
+
+@app.route('/get_data_from_table', methods=['GET'])
+def get_data_from_table():
+    # Check if an TABLE was provided as part of the URL.
+    # If TABLE is provided, assign it to a variable.
+    # If no TABLE is provided, display an error in the browser.
+    if 'table' in request.args:
+        if 'columns' in request.args:
+            table = str(request.args['table'])
+            columns_str = str(request.args['columns'])
+            columns_list = columns_str.split(',')
+            # print(str(request.data))
+            # print(str(request.args['columns']))
+    else:
+        return "Error: No id field provided. Please specify an id."
+
+    return P.query(table, columns_list)
+
+
+@app.route('/post_from_table', methods=['POST'])
+def post_from_table():
+    # Check if an TABLE was provided as part of the URL.
+    # If TABLE is provided, assign it to a variable.
+    # If no TABLE is provided, display an error in the browser.
+    if request.data:
+        body_str = str(request.data)
+    else:
+        return "Error: No id field provided. Please specify an id."
+
+    return P.query(table, columns_list)
 
 
 app.run()
