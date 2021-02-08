@@ -1,19 +1,33 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
-MAINTANER Your Name "youremail@domain.tld"
+# Upgrade installed packages
+RUN apt-get update && apt-get upgrade -y && apt-get clean
 
-RUN apt-get update -y && \
-    apt-get install -y python-pip python-dev
+# Python package management and basic dependencies
+RUN apt-get install -y curl python3.7 python3.7-dev python3.7-distutils
 
-# We copy just the requirements.txt first to leverage Docker cache
+# Register the version in alternatives
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
+
+# Set python 3 as the default python
+RUN update-alternatives --set python /usr/bin/python3.7
+
+# Upgrade pip to latest version
+RUN curl -s https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python get-pip.py --force-reinstall && \
+    rm get-pip.py
+
+EXPOSE 5000/tcp
+
+# Copy just the requirements.txt first to leverage Docker cache
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
 
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 COPY . /app
 
 ENTRYPOINT [ "python" ]
 
-CMD [ "app.py" ]
+CMD [ "api.py" ]
