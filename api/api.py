@@ -3,8 +3,8 @@ import urllib.parse as up
 from typing import List, Tuple, Optional
 import json
 
-import psycopg2
 import flask
+import psycopg2
 from flask import request
 
 
@@ -30,7 +30,7 @@ class PostgresManager:
         return return_tuple
 
     def get_columns_from_table(self, table: str, columns: List[str]) -> Tuple[str]:
-        list_columns_str = PostgresManager.DEC.join(columns)  # TODO: how to call to static element
+        list_columns_str = PostgresManager.DEC.join(columns)
         query_str = f'SELECT {list_columns_str} FROM {table}'
         return self._execute_query(query_str)
 
@@ -44,7 +44,7 @@ class PostgresManager:
         else:
             tuple_results = self.get_columns_from_table(table)
         json_str = json.dumps(tuple_results)
-        print(json_str)
+        # print(json_str)
         return json_str
 
 
@@ -55,15 +55,21 @@ app.config["DEBUG"] = True
 
 @app.route('/', methods=['GET'])
 def home():
+    '''
+    Handle GET request for landing page with instruction for interface
+    :return: string: Instructions to server API
+    '''
     return "<h1>Distant Reading Archive</h1>" \
            "<p>This site is a prototype API for distant reading of science fiction novels.</p>"
 
 
 @app.route('/get_all_table', methods=['GET'])
 def get_all_table():
-    # Check if an TABLE was provided as part of the URL.
-    # If TABLE is provided, assign it to a variable.
-    # If no TABLE is provided, display an error in the browser.
+    '''
+    Handle GET request to execute SQL request to DB to get all table rows.
+    :param: get table parameter from URL query parameter "table"
+    :return: string: JSON for returned rows from SQL query
+    '''
     if 'table' in request.args:
         table = str(request.args['table'])
     else:
@@ -74,16 +80,17 @@ def get_all_table():
 
 @app.route('/get_data_from_table', methods=['GET'])
 def get_data_from_table():
-    # Check if an TABLE was provided as part of the URL.
-    # If TABLE is provided, assign it to a variable.
-    # If no TABLE is provided, display an error in the browser.
+    '''
+    Handle GET request to execute SQL request to DB to get list of columns from table.
+    :param: get table parameter from URL query parameter "table"
+    :param: get list of columns from URL query parameter "columns" as string with comma delimiter
+    :return: string: JSON for returned rows from SQL query
+    '''
     if 'table' in request.args:
         if 'columns' in request.args:
             table = str(request.args['table'])
             columns_str = str(request.args['columns'])
             columns_list = columns_str.split(',')
-            # print(str(request.data))
-            # print(str(request.args['columns']))
     else:
         return "Error: No id field provided. Please specify an id."
 
@@ -92,15 +99,18 @@ def get_data_from_table():
 
 @app.route('/post_from_table', methods=['POST'])
 def post_from_table():
-    # Check if an TABLE was provided as part of the URL.
-    # If TABLE is provided, assign it to a variable.
-    # If no TABLE is provided, display an error in the browser.
+    '''
+    Handle POST request to execute SQL request to DB to get list of columns from table.
+    :param: get JSON string from body query with table string parameter and columns list of string
+    :return: string: JSON for returned rows from SQL query
+    '''
     if request.data:
-        body_str = str(request.data)
+        body_str = str(request.data.decode("utf-8"))
+        body_dict = json.loads(body_str)
     else:
         return "Error: No id field provided. Please specify an id."
 
-    return P.query(table, columns_list)
+    return P.query(body_dict['table'], body_dict['columns'])
 
 
 app.run()
