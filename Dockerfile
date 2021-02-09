@@ -1,10 +1,11 @@
 FROM ubuntu:18.04
 
 # Upgrade installed packages
-RUN apt-get update && apt-get upgrade -y && apt-get clean
+RUN apt-get update -y && apt-get upgrade -y
+#&& apt-get clean
 
 # Python package management and basic dependencies
-RUN apt-get install -y curl python3.7 python3.7-dev python3.7-distutils
+RUN apt-get install -y -qq curl python3.7 python3.7-dev python3.7-distutils
 
 # Register the version in alternatives
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1
@@ -17,9 +18,7 @@ RUN curl -s https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python get-pip.py --force-reinstall && \
     rm get-pip.py
 
-EXPOSE 5000/tcp
-
-# Copy just the requirements.txt first to leverage Docker cache
+# We copy just the requirements.txt first to leverage Docker cache
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
