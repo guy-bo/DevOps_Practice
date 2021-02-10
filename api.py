@@ -29,6 +29,12 @@ class PostgresManager:
         # print(return_tuple)
         return return_tuple
 
+    def get_tables_names(self) -> Tuple[str]:
+        query_str = f'SELECT table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_schema=\'public\''
+        tuple_results = self._execute_query(query_str)
+        json_str = json.dumps(tuple_results)
+        return json_str
+
     def get_columns_from_table(self, table: str, columns: List[str]) -> Tuple[str]:
         list_columns_str = PostgresManager.DEC.join(columns)
         query_str = f'SELECT {list_columns_str} FROM {table}'
@@ -55,21 +61,36 @@ app.config["DEBUG"] = True
 
 @app.route('/', methods=['GET'])
 def home():
-    '''
+    """
     Handle GET request for landing page with instruction for interface
     :return: string: Instructions to server API
-    '''
-    return "<h1>Distant Reading Archive</h1>" \
-           "<p>This site is a prototype API for distant reading of science fiction novels.</p>"
+    """
+    return ''' Welcome to CoolServer
+    Query command:
+        get_tables_names()
+        get_all_table(table)
+        get_data_from_table(table,columns)
+        post_from_table(body.table,body.columns)
+        '''
+
+
+@app.route('/get_tables_names', methods=['GET'])
+def get_tables_names():
+    """
+    Handle GET request to execute SQL request to DB to get all table rows.
+    :param: get table parameter from URL query parameter "table"
+    :return: string: JSON for returned rows from SQL query
+    """
+    return P.get_tables_names()
 
 
 @app.route('/get_all_table', methods=['GET'])
 def get_all_table():
-    '''
+    """
     Handle GET request to execute SQL request to DB to get all table rows.
     :param: get table parameter from URL query parameter "table"
     :return: string: JSON for returned rows from SQL query
-    '''
+    """
     if 'table' in request.args:
         table = str(request.args['table'])
     else:
@@ -80,12 +101,12 @@ def get_all_table():
 
 @app.route('/get_data_from_table', methods=['GET'])
 def get_data_from_table():
-    '''
+    """
     Handle GET request to execute SQL request to DB to get list of columns from table.
     :param: get table parameter from URL query parameter "table"
     :param: get list of columns from URL query parameter "columns" as string with comma delimiter
     :return: string: JSON for returned rows from SQL query
-    '''
+    """
     if 'table' in request.args:
         if 'columns' in request.args:
             table = str(request.args['table'])
@@ -99,11 +120,11 @@ def get_data_from_table():
 
 @app.route('/post_from_table', methods=['POST'])
 def post_from_table():
-    '''
+    """
     Handle POST request to execute SQL request to DB to get list of columns from table.
     :param: get JSON string from body query with table string parameter and columns list of string
     :return: string: JSON for returned rows from SQL query
-    '''
+    """
     if request.data:
         body_str = str(request.data.decode("utf-8"))
         body_dict = json.loads(body_str)
